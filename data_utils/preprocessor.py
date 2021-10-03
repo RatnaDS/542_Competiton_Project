@@ -9,10 +9,10 @@ class Preprocessor:
     def __init__(self) -> None:
         pass
 
-    def get_window(self, x: pd.DataFrame, 
+    def get_windowed_data(self, x: pd.DataFrame, 
                    interval: float, 
                    y: Union[pd.DataFrame, None]=None, 
-                   window_type: str="centered") -> None:
+                   window_type: str="centered") -> pd.DataFrame:
         """Slice session data into intervals
 
         Args:
@@ -21,11 +21,12 @@ class Preprocessor:
             y (Union[pd.DataFrame, None], optional): Label reference for windowing. This will only be used during training. Defaults to None.
             window_type (str, optional): Type of windowing. Only used when y is not None. Should be one of "centered" or "trailing". Defaults to "centered".
         """
+        assert window_type in ["centered", "trailing"]
         if y is None:
-            assert window_type in ["centered", "trailing"]
-            windowed_data = self.get_windows_without_labels(x, interval)
+            windowed_data = self.get_windows_without_labels(x, interval, window_type)
         else:
             windowed_data = self.get_windows_with_labels(x, y, interval, window_type)
+        return windowed_data
 
     def get_windows_without_labels(self, 
                                    x: pd.DataFrame, 
@@ -33,15 +34,16 @@ class Preprocessor:
                                    window_type: str="centered") -> np.array:
         if window_type == "centered":
             centers = x["time"]
-            windows = self.trunc_centered(x, centers, interval)
+            windowed_data = self.trunc_centered(x, centers, interval)
         else:
-            windows = self.trunc_trailing()
+            windowed_data = self.trunc_trailing()
+        return windowed_data
 
     def get_windows_with_labels(self, 
                                 x: pd.DataFrame, 
                                 y: pd.DataFrame, 
                                 interval: float, 
-                                window_type: str="centered") -> np.array:
+                                window_type: str="centered") -> pd.DataFrame:
         
         if window_type == "centered":
             centers = y["time"]
@@ -58,7 +60,7 @@ class Preprocessor:
             window_end = center + interval / 2
 
             windowed_signal = self.retrieve_window(x, window_start, window_end, interval)
-            windowed_signal["time"] = [i for _ in range(len(windowed_signal))]
+            windowed_signal["timestamp"] = [i for _ in range(len(windowed_signal))]
             windowed_signals.append(windowed_signal)
         return pd.concat(windowed_signals, axis=0).reset_index(drop=True)
 

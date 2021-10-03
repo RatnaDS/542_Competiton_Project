@@ -43,5 +43,6 @@ class Dataloader:
         
         x = pd.concat([x_time, x_data], axis=1)
         y = pd.concat([y_time, y_data], axis=1)
+        y = y.reset_index(drop=False).rename(columns={"index": "timestamp"})
         
         return x, y
