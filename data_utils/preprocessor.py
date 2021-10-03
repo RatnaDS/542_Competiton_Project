@@ -10,16 +10,19 @@ class Preprocessor:
         pass
 
     def get_windowed_data(self, x: pd.DataFrame, 
-                   interval: float, 
-                   y: Union[pd.DataFrame, None]=None, 
-                   window_type: str="centered") -> pd.DataFrame:
+                          interval: float, 
+                          y: Union[pd.DataFrame, None]=None, 
+                          window_type: str="centered") -> pd.DataFrame:
+        
         """Slice session data into intervals
 
         Args:
             x (pd.DataFrame): Data from a session
             interval (float): Time interval in seconds
             y (Union[pd.DataFrame, None], optional): Label reference for windowing. This will only be used during training. Defaults to None.
-            window_type (str, optional): Type of windowing. Only used when y is not None. Should be one of "centered" or "trailing". Defaults to "centered".
+            window_type (str, optional): Type of windowing. Should be one of "centered" or "trailing". Defaults to "centered".
+                                         "centered" means the window will be centered around the anchor time. 
+                                         "trailing" means the window will consider samples before the anchor time.
         """
         assert window_type in ["centered", "trailing"]
         if y is None:
@@ -44,6 +47,19 @@ class Preprocessor:
                                 y: pd.DataFrame, 
                                 interval: float, 
                                 window_type: str="centered") -> pd.DataFrame:
+        """Split data into windows with time from y as anchor points
+
+        Args:
+            x (pd.DataFrame): Sequential data from a session
+            y (pd.DataFrame): Sequential labels from a session
+            interval (float): Time interval of the window
+            window_type (str, optional): Type of windowing. Should be one of "centered" or "trailing". Defaults to "centered".
+                                         "centered" means the window will be centered around the anchor time. 
+                                         "trailing" means the window will consider samples before the anchor time.
+
+        Returns:
+            pd.DataFrame: Windowed data
+        """
         
         if window_type == "centered":
             centers = y["time"]
@@ -67,7 +83,10 @@ class Preprocessor:
     def trunc_trailing(self):
         pass
 
-    def retrieve_window(self, x: pd.DataFrame, window_start: float, window_end: float, interval: int):
+    def retrieve_window(self, x: pd.DataFrame, 
+                        window_start: float, 
+                        window_end: float, 
+                        interval: int) -> pd.DataFrame:
 
         windowed_signal = x[(x["time"] > window_start) & (x["time"] < window_end)][X_HEADER]
         expected_num_samples = interval * DataConstants.SAMPLING_RATE_X
