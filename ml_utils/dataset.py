@@ -82,6 +82,6 @@ class SubjectDataset(Dataset):
         assert len_array == len(y_df)
 
         values = df[X_HEADER].values
-        X = values.reshape(len_array, timesteps, len(X_HEADER)))
+        X = values.reshape(len_array, timesteps, len(X_HEADER))
         
         return np.transpose(X, axes=(0, 2, 1)).copy()
