@@ -81,10 +81,7 @@ class SubjectDataset(Dataset):
         len_array = int(len(df) / timesteps)
         assert len_array == len(y_df)
 
-        X = np.zeros((len_array, len(X_HEADER), timesteps))
-        unique_timestamps = y_df["timestamp"].tolist()
-        for i, timestamp in enumerate(unique_timestamps):
-            _X = df[df["timestamp"] == timestamp][X_HEADER].values.T
-            X[i] = _X
+        values = df[X_HEADER].values
+        X = values.reshape(len_array, timesteps, len(X_HEADER)))
         
-        return X
+        return np.transpose(X, axes=(0, 2, 1)).copy()
