@@ -52,6 +52,7 @@ class SubjectDataset(Dataset):
         y_list = []
 
         for uid, y_file in self.y_files.items():
+            print(f"Converting uid {uid}")
             y = pd.read_csv(y_file)
             n_samples = len(y)
             num_samples += n_samples
@@ -86,4 +87,4 @@ class SubjectDataset(Dataset):
             _X = df[df["timestamp"] == timestamp][X_HEADER].values.T
             X[i] = _X
         
-        return np.expand_dims(X, axis=0) # Add a batch dimension and return
+        return X
