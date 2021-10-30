@@ -39,7 +39,7 @@ class SubjectDataset(Dataset):
     def __getitem__(self, index):
         
         inputs = self.X[index]
-        labels = self.y[index]
+        labels = np.array([self.y[index]])
 
         return torch.from_numpy(inputs), torch.from_numpy(labels)
 
