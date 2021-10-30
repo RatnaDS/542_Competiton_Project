@@ -59,7 +59,7 @@ class SubjectDataset(Dataset):
             x_file = self.x_files[uid]
             X_dataframe = pd.read_csv(x_file)
             if timesteps is None:
-                _sample = X[X["timestamp"] == 0]
+                _sample = X_dataframe[X_dataframe["timestamp"] == 0]
                 timesteps = len(_sample)
 
             # Convert to numpy
