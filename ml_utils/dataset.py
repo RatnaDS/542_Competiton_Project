@@ -83,7 +83,7 @@ class SubjectDataset(Dataset):
         X = np.zeros((len_array, len(X_HEADER), timesteps))
         unique_timestamps = y_df["timestamp"].tolist()
         for i, timestamp in enumerate(unique_timestamps):
-            _X = df[df["timestamp"] == timestamp].values.T
+            _X = df[df["timestamp"] == timestamp][X_HEADER].values.T
             X[i] = _X
         
         return np.expand_dims(X, axis=0) # Add a batch dimension and return
