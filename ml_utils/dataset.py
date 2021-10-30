@@ -11,7 +11,7 @@ SUBJECT_Y_TEMPLATE = "subject_{}_session_{}__y.csv"
 SUBJECT_Y_TIME_TEMPLATE = "subject_{}_session_{}__y_time.csv"
 
 X_HEADER = ["acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z"]
-Y_HEADER = "label"
+Y_HEADER = ["label"]
 
 
 def parse_uid(uid):
@@ -33,6 +33,8 @@ class SubjectDataset(Dataset):
         # Generate a list of samples and determine the number of datapoints in the dataset 
         # and build up the cache
         self.build_cache_and_datalen()
+
+        assert self.cache_len < self.num_samples
 
     def __len__(self):
         return self.num_samples
@@ -58,13 +60,13 @@ class SubjectDataset(Dataset):
             self.cache[uid] = {"X": X, "y": y}
         timestamp = info["timestamp"][0]
         X = X[X["timestamp"] == timestamp][X_HEADER]
-        y = y[y["timestamp"] == timestamp].reset_index(drop=True).loc[0, Y_HEADER]
+        y = y[y["timestamp"] == timestamp][Y_HEADER]
 
         inputs = X.values.T # Convert to channel first
         
-        labels = np.array([y]) # Make 1 dimensional for classification
+        labels = y.values.astype(int).flatten() # Make 1 dimensional for classification
 
-        return torch.from_numpy(inputs).float(), torch.from_numpy(labels)
+        return torch.from_numpy(inputs), torch.from_numpy(labels)
 
     def build_cache_and_datalen(self):
 
