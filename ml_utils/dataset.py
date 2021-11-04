@@ -11,7 +11,7 @@ SUBJECT_Y_TEMPLATE = "subject_{}_session_{}__y.csv"
 SUBJECT_Y_TIME_TEMPLATE = "subject_{}_session_{}__y_time.csv"
 
 X_HEADER = ["acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z"]
-Y_HEADER = "label"
+Y_HEADER = ["label"]
 
 
 def parse_uid(uid):
@@ -22,11 +22,10 @@ def parse_uid(uid):
 
 class SubjectDataset(Dataset):
 
-    def __init__(self, datapath: str, ids: list, cache_len: int=1):
+    def __init__(self, datapath: str, ids: list):
         
         self.ids = ids
         self.datapath = datapath
-        self.cache_len = cache_len
         self.y_files = {uid: os.path.join(self.datapath, SUBJECT_Y_TEMPLATE.format(parse_uid(uid)[0], parse_uid(uid)[1])) for uid in self.ids}
         self.x_files = {uid: os.path.join(self.datapath, SUBJECT_X_TEMPLATE.format(parse_uid(uid)[0], parse_uid(uid)[1])) for uid in self.ids}
         
@@ -39,63 +38,50 @@ class SubjectDataset(Dataset):
 
     def __getitem__(self, index):
         
-        # Get the sample info from the index
-        info = self.index_store[self.index_store["index"] == index].reset_index(drop=True)
-        # Get the uid
-        uid = info["uid"][0]
-        # If the uid matches the uid of the file in memory, no need to read from disk
-        if uid in self.uid_cache:
-            # Return the sample at timestamp
-            X = self.cache[uid]["X"]
-            y = self.cache[uid]["y"]
-        else:
-            # Evict a file from the cache
-            uid_to_evict = self.uid_cache.pop()
-            del self.cache[uid_to_evict]
-            # Read from disk and refresh cache
-            X = pd.read_csv(self.x_files[uid])
-            y = pd.read_csv(self.y_files[uid])
-            self.cache[uid] = {"X": X, "y": y}
-        timestamp = info["timestamp"][0]
-        X = X[X["timestamp"] == timestamp][X_HEADER]
-        y = y[y["timestamp"] == timestamp].reset_index(drop=True).loc[0, Y_HEADER]
+        inputs = self.X[index]
+        labels = np.array([self.y[index]])
 
-        inputs = X.values.T # Convert to channel first
-        
-        labels = np.array([y]) # Make 1 dimensional for classification
-
-        return torch.from_numpy(inputs).float(), torch.from_numpy(labels)
+        return torch.from_numpy(inputs), torch.from_numpy(labels)
 
     def build_cache_and_datalen(self):
 
-        self.index_store = pd.DataFrame({
-            "label": [],
-            "timestamp": [],
-            "uid": [],
-            "index": []
-        })
-
-        self.uid_cache = []
-        self.cache = dict()
         num_samples = 0
-        for i, (uid, y_file) in enumerate(self.y_files.items()):
+        timesteps = None
+
+        X_list = []
+        y_list = []
+
+        for uid, y_file in self.y_files.items():
+            print(f"Converting uid {uid}")
             y = pd.read_csv(y_file)
             n_samples = len(y)
-            
-            sample_info = pd.DataFrame({
-                "label": y["label"],
-                "timestamp": y["timestamp"],
-                "uid": [uid for _ in range(n_samples)],
-                # Assigns a unique index to the sample, irrespective of the subject and session id
-                "index": [num_samples + i for i in range(n_samples)]
-            })
-            self.index_store = pd.concat([self.index_store, sample_info], axis=0).reset_index(drop=True)
             num_samples += n_samples
 
-            if i < self.cache_len:
-                x_file = self.x_files[uid]
-                self.uid_cache.append(uid)
-                X = pd.read_csv(x_file)
-                self.cache[uid] = {"X": X, "y": y}
+            x_file = self.x_files[uid]
+            X_dataframe = pd.read_csv(x_file)
+            if timesteps is None:
+                _sample = X_dataframe[X_dataframe["timestamp"] == 0]
+                timesteps = len(_sample)
+
+            # Convert to numpy
+            X = self.dataframe_to_numpy(X_dataframe, timesteps, y)
+
+            X_list.append(X)
+            y_list.append(y["label"].values)
+
+        self.X = np.concatenate(X_list, axis=0).astype(np.float32)
+        self.y = np.concatenate(y_list, axis=0).astype(int)
+        assert self.X.shape[0] == self.y.shape[0]
         
-        self.num_samples = num_samples
+        self.num_samples = self.X.shape[0]
+
+    def dataframe_to_numpy(self, df, timesteps, y_df):
+        """Convert from pandas to numpy for faster access
+        """
+        len_array = int(len(df) / timesteps)
+        assert len_array == len(y_df)
+
+        values = df[X_HEADER].values
+        X = values.reshape(len_array, timesteps, len(X_HEADER))
+        
+        return np.transpose(X, axes=(0, 2, 1)).copy()
