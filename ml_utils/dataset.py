@@ -2,16 +2,14 @@ import os
 import pandas as pd
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+from . import X_HEADER, Y_HEADER
 
 
 SUBJECT_X_TEMPLATE = "subject_{}_session_{}__x.csv"
 SUBJECT_X_TIME_TEMPLATE = "subject_{}_session_{}__x_time.csv"
 SUBJECT_Y_TEMPLATE = "subject_{}_session_{}__y.csv"
 SUBJECT_Y_TIME_TEMPLATE = "subject_{}_session_{}__y_time.csv"
-
-X_HEADER = ["acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z"]
-Y_HEADER = ["label"]
 
 
 def parse_uid(uid):
@@ -89,12 +87,13 @@ class SubjectDataset(Dataset):
 
 class SequentialSubjectDataset(Dataset):
 
-    def __init__(self, datapath: str, ids: list):
+    def __init__(self, datapath: str, ids: list, sequence_length: int=40):
         
         self.ids = ids
         self.datapath = datapath
         self.y_files = {uid: os.path.join(self.datapath, SUBJECT_Y_TEMPLATE.format(parse_uid(uid)[0], parse_uid(uid)[1])) for uid in self.ids}
         self.x_files = {uid: os.path.join(self.datapath, SUBJECT_X_TEMPLATE.format(parse_uid(uid)[0], parse_uid(uid)[1])) for uid in self.ids}
+        self.sequence_length = sequence_length
         
         # Generate a list of samples and determine the number of datapoints in the dataset 
         # and build up the cache
@@ -105,8 +104,10 @@ class SequentialSubjectDataset(Dataset):
 
     def __getitem__(self, index):
         
-        inputs = self.X[index]
-        labels = np.array([self.y[index]])
+        lower = max(0, index - self.sequence_length)
+
+        inputs = self.X[lower:index]
+        labels = self.y[lower:index]
 
         return torch.from_numpy(inputs), torch.from_numpy(labels)
 
@@ -151,4 +152,4 @@ class SequentialSubjectDataset(Dataset):
         values = df[X_HEADER].values
         X = values.reshape(len_array, timesteps, len(X_HEADER))
         
-        return np.transpose(X, axes=(0, 2, 1)).copy()
+        return X.copy()
