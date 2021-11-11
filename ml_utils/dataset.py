@@ -112,9 +112,15 @@ class SequentialSubjectDataset(Dataset):
 
             inputs = self.X[lower:index, :]
             labels = self.y[lower:index]
+
+            # Remove the dummy appended values
+            valid_indices = labels != -1
+            inputs = inputs[valid_indices, :]
+            labels = labels[valid_indices]
         else:
             inputs = self.X[[index], :, :]
             labels = self.y[[index], :]
+            
             # Remove the dummy appended values
             valid_indices = labels[0] != -1
             inputs = inputs[:, valid_indices]
