@@ -189,7 +189,7 @@ class SequentialSubjectDataset(Dataset):
             X = np.concatenate([X, np.zeros((num_additional, feature_size))], axis=0)
             y = np.concatenate([y, -1*np.ones((num_additional,), dtype=np.int64)], axis=0)
         
-        return X.copy()
+        return X.copy(), y.copy()
 
     def collate_batch(self, batch):
         inputs, outputs = zip(*batch)
