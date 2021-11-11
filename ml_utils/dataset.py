@@ -111,7 +111,7 @@ class SequentialSubjectDataset(Dataset):
             lower = max(0, index - self.sequence_length)
 
             inputs = self.X[lower:index, :]
-            labels = np.expand_dims(self.y[lower:index], axis=0)
+            labels = self.y[lower:index]
         else:
             inputs = self.X[[index], :, :]
             labels = self.y[[index], :]
