@@ -108,23 +108,34 @@ class SequentialSubjectDataset(Dataset):
     def __getitem__(self, index):
 
         if self.phase == "train":
-        
-            lower = max(0, index - self.sequence_length)
+            
+            lower = index - self.sequence_length
 
-            inputs = self.X[lower:index, :]
-            labels = self.y[lower:index]
+            if lower < 0:
+                num_extra = abs(lower)
+                padding_X = np.zeros((num_extra, self.feature_size), dtype=np.float32)
+                padding_y = -1*np.ones((num_extra,), dtype=np.int64)
+
+                inputs = np.concatenate([padding_X, self.X[:index, :]], axis=0)
+                labels = np.concatenate([padding_y, self.y[:index]], axis=0)
+            else:
+                inputs = self.X[lower:index, :]
+                labels = self.y[lower:index]
 
             mask = labels != -1
 
             return_values = torch.from_numpy(inputs), torch.from_numpy(labels), torch.from_numpy(mask)
+
+            if inputs.shape[0] < self.sequence_length:
+                print(index)
         else:
-            inputs = self.X[[index], :, :]
-            labels = self.y[[index], :]
+            inputs = self.X[index, :]
+            labels = self.y[index]
             
             # Remove the dummy appended values
-            valid_indices = labels[0] != -1
-            inputs = inputs[:, valid_indices]
-            labels = labels[:, valid_indices]
+            valid_indices = labels != -1
+            inputs = inputs[valid_indices]
+            labels = labels[valid_indices]
 
             return_values = torch.from_numpy(inputs), torch.from_numpy(labels)
         
