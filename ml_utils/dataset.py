@@ -87,10 +87,11 @@ class SubjectDataset(Dataset):
 
 class SequentialSubjectDataset(Dataset):
 
-    def __init__(self, datapath: str, ids: list, sequence_length: int=10, phase: str="train"):
+    def __init__(self, datapath: str, ids: list, sequence_length: int=10, phase: str="train", num_classes: int=4):
         
         assert phase in ["train", "test"]
         self.phase = phase
+        self.num_classes = num_classes
         self.ids = ids
         self.datapath = datapath
         self.y_files = {uid: os.path.join(self.datapath, SUBJECT_Y_TEMPLATE.format(parse_uid(uid)[0], parse_uid(uid)[1])) for uid in self.ids}
@@ -113,10 +114,9 @@ class SequentialSubjectDataset(Dataset):
             inputs = self.X[lower:index, :]
             labels = self.y[lower:index]
 
-            # Remove the dummy appended values
-            valid_indices = labels != -1
-            inputs = inputs[valid_indices, :]
-            labels = labels[valid_indices]
+            mask = labels != -1
+
+            return_values = torch.from_numpy(inputs), torch.from_numpy(labels), torch.from_numpy(mask)
         else:
             inputs = self.X[[index], :, :]
             labels = self.y[[index], :]
@@ -126,7 +126,9 @@ class SequentialSubjectDataset(Dataset):
             inputs = inputs[:, valid_indices]
             labels = labels[:, valid_indices]
 
-        return torch.from_numpy(inputs), torch.from_numpy(labels)
+            return_values = torch.from_numpy(inputs), torch.from_numpy(labels)
+        
+        return return_values
 
     def build_cache_and_datalen(self):
 
@@ -198,5 +200,9 @@ class SequentialSubjectDataset(Dataset):
         return X.copy(), y.copy()
 
     def collate_batch(self, batch):
-        inputs, outputs = zip(*batch)
-        return torch.stack(inputs), torch.stack(outputs)
+        if self.phase == "train":
+            inputs, outputs, masks = zip(*batch)
+            return torch.stack(inputs), torch.stack(outputs), torch.stack(masks)
+        else:
+            inputs, outputs = zip(*batch)
+            return torch.stack(inputs), torch.stack(outputs)
