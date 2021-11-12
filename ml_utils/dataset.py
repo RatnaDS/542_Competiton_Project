@@ -113,21 +113,19 @@ class SequentialSubjectDataset(Dataset):
 
             if lower < 0:
                 num_extra = abs(lower)
-                padding_X = np.zeros((num_extra, self.feature_size), dtype=np.float32)
+                padding_X = np.zeros((num_extra, self.extra_timesteps, self.feature_size), dtype=np.float32)
                 padding_y = -1*np.ones((num_extra,), dtype=np.int64)
 
-                inputs = np.concatenate([padding_X, self.X[:index, :]], axis=0)
+                inputs = np.concatenate([padding_X, self.X[:index, :, :]], axis=0)
                 labels = np.concatenate([padding_y, self.y[:index]], axis=0)
             else:
-                inputs = self.X[lower:index, :]
+                inputs = self.X[lower:index, :, :]
                 labels = self.y[lower:index]
 
             mask = labels != -1
 
             return_values = torch.from_numpy(inputs), torch.from_numpy(labels), torch.from_numpy(mask)
 
-            if inputs.shape[0] < self.sequence_length:
-                print(index)
         else:
             inputs = self.X[index, :]
             labels = self.y[index]
@@ -171,12 +169,12 @@ class SequentialSubjectDataset(Dataset):
         y = np.concatenate(y_list, axis=0).astype(np.int64)
         assert X.shape[0] == y.shape[0]
 
-        self.num_samples, self.feature_size = X.shape
+        self.num_samples, self.extra_timesteps, self.feature_size = X.shape
 
         if self.phase == "test":
             # Group timesteps together
             steps = self.num_samples // self.sequence_length
-            X = X.reshape(steps, self.sequence_length, self.feature_size)
+            X = X.reshape(steps, self.sequence_length, self.extra_timesteps, self.feature_size)
             y = y.reshape(steps, self.sequence_length)
 
         self.X = X.copy()
@@ -195,9 +193,8 @@ class SequentialSubjectDataset(Dataset):
         y = y_df["label"].values
 
         X = values.reshape(len_array, timesteps, len(X_HEADER))
-        X = X.reshape(len_array, timesteps*len(X_HEADER))
 
-        num_samples, feature_size = X.shape
+        num_samples, timesteps, feature_size = X.shape
 
         steps = num_samples // self.sequence_length
         if (num_samples % self.sequence_length) != 0:
@@ -205,7 +202,7 @@ class SequentialSubjectDataset(Dataset):
             # Append some dummy values to X and y. Remove in __getitem__
             num_additional = steps*self.sequence_length - num_samples
             
-            X = np.concatenate([X, np.zeros((num_additional, feature_size))], axis=0)
+            X = np.concatenate([X, np.zeros((num_additional, timesteps, feature_size))], axis=0)
             y = np.concatenate([y, -1*np.ones((num_additional,), dtype=np.int64)], axis=0)
         
         return X.copy(), y.copy()
