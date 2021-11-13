@@ -114,7 +114,7 @@ class SequentialSubjectDataset(Dataset):
             if lower < 0:
                 num_extra = abs(lower)
                 padding_X = np.zeros((num_extra, self.extra_timesteps, self.feature_size), dtype=np.float32)
-                padding_y = -1*np.ones((num_extra,), dtype=np.int64)
+                padding_y = -2*np.ones((num_extra,), dtype=np.int64)
 
                 inputs = np.concatenate([padding_X, self.X[:index, :, :]], axis=0)
                 labels = np.concatenate([padding_y, self.y[:index]], axis=0)
@@ -122,7 +122,7 @@ class SequentialSubjectDataset(Dataset):
                 inputs = self.X[lower:index, :, :]
                 labels = self.y[lower:index]
 
-            mask = labels != -1
+            mask = labels != -2
 
             return_values = torch.from_numpy(inputs), torch.from_numpy(labels), torch.from_numpy(mask)
 
@@ -131,7 +131,7 @@ class SequentialSubjectDataset(Dataset):
             labels = self.y[index]
             
             # Remove the dummy appended values
-            valid_indices = labels != -1
+            valid_indices = labels != -2
             inputs = inputs[valid_indices]
             labels = labels[valid_indices]
 
@@ -203,7 +203,7 @@ class SequentialSubjectDataset(Dataset):
             num_additional = steps*self.sequence_length - num_samples
             
             X = np.concatenate([X, np.zeros((num_additional, timesteps, feature_size))], axis=0)
-            y = np.concatenate([y, -1*np.ones((num_additional,), dtype=np.int64)], axis=0)
+            y = np.concatenate([y, -2*np.ones((num_additional,), dtype=np.int64)], axis=0)
         
         return X.copy(), y.copy()
 
