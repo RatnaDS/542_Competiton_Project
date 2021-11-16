@@ -72,24 +72,47 @@ class Preprocessor:
         windowed_signals = []
         for i, center in enumerate(centers):
             center = float(center)
-            window_start = center - interval / 2
-            window_end = center + interval / 2
+
+            if interval == 0:
+                # Degenerete case
+                window_start = center - (DataConstants.SAMPLING_RATE_X / DataConstants.SAMPLING_RATE_Y) / DataConstants.SAMPLING_RATE_X
+                window_end = center
+            else:
+                window_start = center - interval / 2
+                window_end = center + interval / 2
 
             windowed_signal = self.retrieve_window(x, window_start, window_end, interval)
             windowed_signal["timestamp"] = [i for _ in range(len(windowed_signal))]
             windowed_signals.append(windowed_signal)
         return pd.concat(windowed_signals, axis=0).reset_index(drop=True)
 
-    def trunc_trailing(self):
-        pass
+    def trunc_trailing(self, x: pd.DataFrame, ends: pd.Series, interval: float):
+        windowed_signals = []
+        for i, end in enumerate(ends):
+            end = float(end)
+            if interval == 0:
+                # Degenerete case
+                window_start = end - (DataConstants.SAMPLING_RATE_X / DataConstants.SAMPLING_RATE_Y) / DataConstants.SAMPLING_RATE_X
+                window_end = end
+            else:
+                window_start = end - interval
+                window_end = end
+
+            windowed_signal = self.retrieve_window(x, window_start, window_end, interval)
+            windowed_signal["timestamp"] = [i for _ in range(len(windowed_signal))]
+            windowed_signals.append(windowed_signal)
+        return pd.concat(windowed_signals, axis=0).reset_index(drop=True)
 
     def retrieve_window(self, x: pd.DataFrame, 
                         window_start: float, 
                         window_end: float, 
                         interval: int) -> pd.DataFrame:
 
+        if interval == 0:
+            expected_num_samples = DataConstants.SAMPLING_RATE_X // DataConstants.SAMPLING_RATE_Y
+        else:
+            expected_num_samples = interval * DataConstants.SAMPLING_RATE_X
         windowed_signal = x[(x["time"] > window_start) & (x["time"] < window_end)][X_HEADER]
-        expected_num_samples = interval * DataConstants.SAMPLING_RATE_X
 
         if window_start < x.loc[0, "time"]:
             # Padding at the start of the signal
