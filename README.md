@@ -5,7 +5,9 @@
 - Sahil Anish Palarpwar (spalarp)
 - Sai Ratna Dabhamalla (sdarbha)
 
-For ease of colaboration between the team, we have developed the common functionality (like custom PyTorch Dataset, preprocessing, and splitting code) as a package. This code lives in a private GitHub repository, and is cloned onto Colab using an access token. The packages can be imported in noteboks to make them cleaner. This way, the common tasks like data preprocessing and splitting can be done locally and the same data and code version can be shared within the team. This is not necessary if the code is copied to the Colab VM manually. The code can be imported in the notebook without cloning the repository using the following steps:
+For ease of colaboration between the team, we have developed the common functionality (like custom PyTorch Dataset, preprocessing, and splitting code) as a package. This code lives in a private GitHub repository, and is cloned onto Colab using a personal access token (this will only work if access to the private repository is given). The packages can be imported in noteboks to make them cleaner. This way, the common tasks like data preprocessing and splitting can be done locally and the same data and code version can be shared within the team. 
+
+This is not necessary if the code is copied to the Colab VM manually. The code can be imported in the notebook without cloning the repository using the following steps:
 1. Copy the folder ```ece542-competition-project``` to the the desired location.
 2. Add the following lines to the start of the notebook:
    ```python
