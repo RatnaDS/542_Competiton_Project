@@ -17,7 +17,7 @@ This is not necessary if the code is copied to the Colab VM manually. The code c
    Where ```<PATH_TO_PARENT_DIR>``` is the absolute path to the directory where the folder ```ece542-competition-project``` containing the code is copied.
 
 ### Dependencies
-The file requirements.txt contains the libraries required for the project.
+The file ```requirements.txt``` contains the libraries required for the project.
 
 ### Following are the packages we built for the project:
 - **data_utils**
