@@ -1,4 +1,4 @@
-# ECE542: Competition Project
+# ECE542: Proj-C
 
 ## Team 11
 - Chinmay Mahendra Savadikar (csavadi)
