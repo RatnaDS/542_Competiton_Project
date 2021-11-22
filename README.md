@@ -1,4 +1,4 @@
-# ECE542: Proj-C
+# ECE542 - Neural Networks: Proj-C
 
 ## Team 11
 - Chinmay Mahendra Savadikar (csavadi)
